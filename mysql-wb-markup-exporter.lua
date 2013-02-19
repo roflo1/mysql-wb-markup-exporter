@@ -19,6 +19,8 @@
 -- plugins in this module and basic plugin info
 -- see the comments in the function body and adjust the parameters as appropriate
 --
+
+
 function getModuleInfo()
 
     -- module properties
@@ -68,7 +70,7 @@ function getPluginInfo()
 
     local props = getModuleInfo()
 
-    -- new plugin: export to clipboard
+    -- new plugin: export Confluence to clipboard
     plugin = createNewPlugin("wb.catalog.util.exportMarkupToClipboard" .. props.version,
                              "Confluence Markup Exporter " .. props.version .. ": Copy to Clipboard",
                              props.name,
@@ -79,7 +81,6 @@ function getPluginInfo()
     -- append to list of plugins
     grtV.insert(l, plugin)
 
-	-- \ToDo: Figure if this is the proper way to do it.
     -- new plugin: export HTML to clipboard
     plugin = createNewPlugin("wb.catalog.util.exportHTMLMarkupToClipboard" .. props.version,
                              "HTML Markup Exporter " .. props.version .. ": Copy to Clipboard",
@@ -121,7 +122,7 @@ end
 --
 -- Print some version information and copyright to the output window
 function printVersion()
-    print("\n\n\MySQL Schema to Confluence Markup Exporter v" .. getModuleInfo().version .. "\nCopyright (c) 2013 Ralf Schaeftlein - License: Apache License 2.0");
+    print("\n\n\MySQL Schema to Confluence/HTML Markup Exporter v" .. getModuleInfo().version .. "\nCopyright (c) 2013 Ralf Schaeftlein - License: Apache License 2.0");
 end
 
 -- export function #1
@@ -136,6 +137,9 @@ function exportMarkupToClipboard(catalog)
 
     return 0
 end
+
+
+
 
 --
 -- generates the confluence markup
@@ -327,6 +331,11 @@ function buildMarkupForSingleColumn(tbl, col, markup)
 end
 
 
+
+
+
+
+
 -- export function #2
 function exportHTMLMarkupToClipboard(catalog)
 
@@ -335,7 +344,7 @@ function exportHTMLMarkupToClipboard(catalog)
 
     Workbench:copyToClipboard(markup)
 
-    print('\n > Confluence Markup  copied to clipboard')
+    print('\n > HTML Markup copied to clipboard')
 
     return 0
 end
@@ -344,6 +353,17 @@ end
 --
 -- generates the HTML markup
 function generateHTMLMarkup(cat)
+
+    return generateGenericMarkup(cat, "<h2>", "</h2>", "<br />\n", "<table>", "</table>", "<tr>", "</tr>", "<th>", "</th>", "<td>", "</td>", "<h3>", "</h3>")
+end
+
+
+
+-- GENERIC Markup functions...
+
+--
+-- generates a Generic markup
+function generateGenericMarkup(cat, mktitle, mktitleend, mkeol, mktable, mktableend, mkrow, mkrowend, mkheader, mkheaderend, mkcell, mkcellend, mksubtitle, mksubtitleend)
     local i, j, schema, tbl
     local markup = ""
     local optionsSetFlag = false
@@ -359,7 +379,7 @@ function generateHTMLMarkup(cat)
             --
             -- do not export *_translation tables
             if (tbl.name ~= nil and tbl.name ~= "" and string.ends(tbl.name, "_translation") == false ) then
-                markup = buildHTMLMarkupForSingleTable(tbl, schema, markup)
+				markup = buildGenericMarkupForSingleTable(tbl, schema, markup, mktitle, mktitleend, mkeol, mktable, mktableend, mkrow, mkrowend, mkheader, mkheaderend, mkcell, mkcellend, mksubtitle, mksubtitleend)
             end
         end
     end
@@ -369,49 +389,48 @@ function generateHTMLMarkup(cat)
     return markup
 end
 
-
-
-function buildHTMLMarkupForSingleTable(tbl, schema, markup)
+function buildGenericMarkupForSingleTable(tbl, schema, markup, mktitle, mktitleend, mkeol, mktable, mktableend, mkrow, mkrowend, mkheader, mkheaderend, mkcell, mkcellend, mksubtitle, mksubtitleend)
     local k, l, col, index, column
     local actAsPart = ""
     local actAs = ""
 
     --
     -- start of adding a table
-	markup = markup .. "<h4> Tablestructure for table " .. tbl.name .. "</h4>"
+	markup = markup .. mktitle .."Tablestructure for table " .. tbl.name .. mktitleend
 	
-	markup = markup .. "<br />\n"
+	markup = markup .. mkeol
 	
 	if ( tbl.comment ~= nil and tbl.comment ~= "" ) then
-		markup = markup .. tbl.comment .. "<br />\n"
+		markup = markup .. tbl.comment .. mkeol
 	end	
 
-	markup = markup .. "<br />\n"
+	markup = markup .. mkeol
 	
 	if (     tbl.tableEngine ~= nil and tbl.tableEngine ~= "") then
-		markup = markup .. " engine " .. tbl.tableEngine .. "<br />\n"
+		markup = markup .. " engine " .. tbl.tableEngine .. mkeol
 	end
 	
 	if ( tbl.defaultCharacterSetName ~= nil and tbl.defaultCharacterSetName ~= "" ) then
-        markup = markup .. " charset: " .. tbl.defaultCharacterSetName .. "<br />\n"
+        markup = markup .. " charset: " .. tbl.defaultCharacterSetName .. mkeol
 	end	
 	if ( tbl.defaultCollationName ~= nil and tbl.defaultCollationName ~= "" ) then
-		markup = markup .. " collation: " .. tbl.defaultCollationName .. "<br />\n"
+		markup = markup .. " collation: " .. tbl.defaultCollationName .. mkeol
     end
 
-	markup = markup .. "<br />\n"
+	markup = markup .. mkeol
 	
-	markup = markup .. "<table>"
-    markup = markup .. "<tr><th> *Column* </th><th> *Type* </th><th> *Null* </th><th> *autoincrement* </th><th> *default* </th>"
-	markup = markup .. "<th> *Primary* </th><th> *Unique* </th><th> *Description*</th></tr>"	
+	markup = markup .. mktable
+    markup = markup .. mkrow ..mkheader.."*Column* "..mkheaderend..mkheader.." *Type* "..mkheaderend..mkheader.." *Null* "..mkheaderend..mkheader
+	markup = markup .. "*autoincrement* "..mkheaderend..mkheader.." *default* "..mkheaderend.. mkheader.." *Primary* "
+	markup = markup .. mkheaderend..mkheader.." *Unique* "..mkheaderend..mkheader.." *Description*"..mkheaderend..mkrowend	
 	
     --
     -- iterate through the table columns
     for k = 1, grtV.getn(tbl.columns) do
         col = tbl.columns[k]
-        markup = buildHTMLMarkupForSingleColumn(tbl, col, markup)
+		markup = buildGenericMarkupForSingleColumn(tbl, col, markup, mkrow, mkcell, mkrowend, mkcellend, mkeol)
     end
-	markup = markup .. "</table>"
+	markup = markup .. mktableend
 
 	
 	-- table index
@@ -419,7 +438,7 @@ function buildHTMLMarkupForSingleTable(tbl, schema, markup)
     for k = 1, grtV.getn(tbl.indices) do
         index = tbl.indices[k]
         if ( index.indexType == "INDEX" ) then
-            indexes = indexes .. "<td> " .. index.name .. " </td><td> "
+            indexes = indexes .. mkcell .. index.name .. mkcellend .. mkcell
             for l = 1, grtV.getn(index.columns) do
                 column = index.columns[l]
                 indexes = indexes .. column.referencedColumn.name
@@ -427,28 +446,27 @@ function buildHTMLMarkupForSingleTable(tbl, schema, markup)
                     indexes = indexes .. ", "
                 end
             end
-            indexes = indexes .. " </td><td> INDEX </td>\n"
+            indexes = indexes .. mkcellend .. mkcell.."INDEX"..mkcellend
         end
     end
     
 	if ( indexes ~= nil and indexes ~= "") then
-		markup = markup .. "<h5> Indexes </h5>"
-		markup = markup .. "<table>"
-		markup = markup .. "<tr><td> *Name* </td><td> *Columns* </td><td> *Type* </td></tr>" 
+		markup = markup .. mksubtitle.."Indexes"..mksubtitleend
+		markup = markup .. mktable
+		markup = markup .. mkrow..mkcell.." *Name* "..mkcellend..mkcell.." *Columns* "..mkcellend..mkcell.." *Type* "..mkcellend .. mkrowend
 		markup = markup .. indexes
-		markup = markup .. "</table>"
+		markup = markup .. mktableend
 	end
 
 	return markup
 end
 
 
-
-function buildHTMLMarkupForSingleColumn(tbl, col, markup)
+function buildGenericMarkupForSingleColumn(tbl, col, markup, mkrow, mkcell, mkrowend, mkcellend, mkeol)
     local l, m, p, u, n
 
 	-- column name
-	markup = markup .. "<tr><td> " .. col.name .. " </td><td> " 
+	markup = markup .. mkrow .. mkcell .. col.name .. mkcellend .. mkcell
 	
 	-- column type
 	if ( col.simpleType ~= nil ) then
@@ -459,27 +477,27 @@ function buildHTMLMarkupForSingleColumn(tbl, col, markup)
         markup = markup.. "(" ..col.length.. ")"
     end
 	
-	markup = markup .. " </td><td> "
+	markup = markup .. mkcellend .. mkcell
 	
 	-- column not null?
 	if ( col.isNotNull == 1 ) then
-		markup = markup .. " NOT NULL " .. " </td><td> "
+		markup = markup .. " NOT NULL " .. mkcellend .. mkcell
 	else
-	    markup = markup .. " NULL " .. " </td><td> "
+	    markup = markup .. " NULL " .. mkcellend .. mkcell
 	end
 	
 	-- autoincrement
 	if ( col.autoIncrement == 1 ) then
-		markup = markup ..  " true </td><td>"
+		markup = markup ..  " true " .. mkcellend .. mkcell
 	else 
-	   markup = markup ..  " false </td><td>"
+	   markup = markup ..  " false " .. mkcellend .. mkcell
 	end
 	
 	-- default
 	if ( col.defaultValue ~= '') then
-		markup = markup .. col.defaultValue .. " </td><td> " 
+		markup = markup .. col.defaultValue .. mkcellend .. mkcell 
 	else 
-		markup = markup .. " </td><td> " 
+		markup = markup .. mkcellend .. mkcell
 	end 
 	
 	p = " false "
@@ -512,10 +530,10 @@ function buildHTMLMarkupForSingleColumn(tbl, col, markup)
     end
 	
 	-- primary key?
-	markup = markup .. p .. " </td><td> "
+	markup = markup .. p .. mkcellend .. mkcell
 	
 	-- unique key?
-	markup = markup .. u .. " </td><td> "
+	markup = markup .. u .. mkcellend .. mkcell
 	
 	-- description
     if ( col.comment ~= nil and col.comment ~= '') then
@@ -530,11 +548,13 @@ function buildHTMLMarkupForSingleColumn(tbl, col, markup)
 		end 
 	end
 	
-	markup = markup .. " </td></tr>\n"
+	markup = markup .. mkcellend .. mkcell .. mkeol
 	
 	
     return markup
 end
+
+
 
 
 function string.ends(String,End)
