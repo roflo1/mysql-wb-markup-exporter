@@ -354,7 +354,7 @@ end
 -- generates the HTML markup
 function generateHTMLMarkup(cat)
 
-    return generateGenericMarkup(cat, "<h2>", "</h2>", "<br />\n", "<table>", "</table>", "<tr>", "</tr>", "<th>", "</th>", "<td>", "</td>", "<h3>", "</h3>")
+    return generateGenericMarkup(cat, "<h2>", "</h2>\n", "\n", "<table>\n", "</table>\n", "<tr>", "</tr>\n", "<th>", "</th>", "<td>", "</td>", "<h3>", "</h3>\n")
 end
 
 
@@ -446,7 +446,7 @@ function buildGenericMarkupForSingleTable(tbl, schema, markup, mktitle, mktitlee
                     indexes = indexes .. ", "
                 end
             end
-            indexes = indexes .. mkcellend .. mkcell.."INDEX"..mkcellend
+            indexes = mkrow..indexes .. mkcellend .. mkcell.."INDEX"..mkcellend..mkrowend
         end
     end
     
@@ -548,7 +548,7 @@ function buildGenericMarkupForSingleColumn(tbl, col, markup, mkrow, mkcell, mkro
 		end 
 	end
 	
-	markup = markup .. mkcellend .. mkcell .. mkeol
+	markup = markup .. mkcellend .. mkrowend .. mkeol
 	
 	
     return markup
