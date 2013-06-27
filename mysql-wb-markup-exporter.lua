@@ -354,7 +354,22 @@ end
 -- generates the HTML markup
 function generateHTMLMarkup(cat)
 
-    return generateGenericMarkup(cat, "<h2>", "</h2>\n", "\n", "<table>\n", "</table>\n", "<tr>", "</tr>\n", "<th>", "</th>", "<td>", "</td>", "<h3>", "</h3>\n")
+    markup = {}
+    markup["title_start"] = "<h2>"
+    markup["title_end"] = "</h2>\n"
+    markup["eol"] = "\n"
+    markup["table_start"] = "<table>\n"
+    markup["table_end"] = "</table>\n"
+    markup["row_start"] = "<tr>"
+    markup["row_end"] = "</tr>\n"
+    markup["cell_header_start"] = "<th>"
+    markup["cell_header_end"] = "</th>"
+    markup["cell_data_start"] = "<td>"
+    markup["cell_data_end"] = "</td>"
+    markup["subtitle_start"] = "<h3>"
+    markup["subtitle_end"] = "</h3>\n"
+
+    return generateGenericMarkup(cat, markup)
 end
 
 
@@ -363,7 +378,7 @@ end
 
 --
 -- generates a Generic markup
-function generateGenericMarkup(cat, mktitle, mktitleend, mkeol, mktable, mktableend, mkrow, mkrowend, mkheader, mkheaderend, mkcell, mkcellend, mksubtitle, mksubtitleend)
+function generateGenericMarkup(cat, mktags)
     local i, j, schema, tbl
     local markup = ""
     local optionsSetFlag = false
@@ -379,7 +394,7 @@ function generateGenericMarkup(cat, mktitle, mktitleend, mkeol, mktable, mktable
             --
             -- do not export *_translation tables
             if (tbl.name ~= nil and tbl.name ~= "" and string.ends(tbl.name, "_translation") == false ) then
-				markup = buildGenericMarkupForSingleTable(tbl, schema, markup, mktitle, mktitleend, mkeol, mktable, mktableend, mkrow, mkrowend, mkheader, mkheaderend, mkcell, mkcellend, mksubtitle, mksubtitleend)
+				markup = buildGenericMarkupForSingleTable(tbl, schema, markup, mktags)
             end
         end
     end
@@ -389,48 +404,48 @@ function generateGenericMarkup(cat, mktitle, mktitleend, mkeol, mktable, mktable
     return markup
 end
 
-function buildGenericMarkupForSingleTable(tbl, schema, markup, mktitle, mktitleend, mkeol, mktable, mktableend, mkrow, mkrowend, mkheader, mkheaderend, mkcell, mkcellend, mksubtitle, mksubtitleend)
+function buildGenericMarkupForSingleTable(tbl, schema, markup, mktags)
     local k, l, col, index, column
     local actAsPart = ""
     local actAs = ""
 
     --
     -- start of adding a table
-	markup = markup .. mktitle .."Tablestructure for table " .. tbl.name .. mktitleend
+	markup = markup .. mktags["title_start"] .."Tablestructure for table " .. tbl.name .. mktags["title_end"]
 	
-	markup = markup .. mkeol
+	markup = markup .. mktags["eol"]
 	
 	if ( tbl.comment ~= nil and tbl.comment ~= "" ) then
-		markup = markup .. tbl.comment .. mkeol
+		markup = markup .. tbl.comment .. mktags["eol"]
 	end	
 
-	markup = markup .. mkeol
+	markup = markup .. mktags["eol"]
 	
 	if (     tbl.tableEngine ~= nil and tbl.tableEngine ~= "") then
-		markup = markup .. " engine " .. tbl.tableEngine .. mkeol
+		markup = markup .. " engine " .. tbl.tableEngine .. mktags["eol"]
 	end
 	
 	if ( tbl.defaultCharacterSetName ~= nil and tbl.defaultCharacterSetName ~= "" ) then
-        markup = markup .. " charset: " .. tbl.defaultCharacterSetName .. mkeol
+        markup = markup .. " charset: " .. tbl.defaultCharacterSetName .. mktags["eol"]
 	end	
 	if ( tbl.defaultCollationName ~= nil and tbl.defaultCollationName ~= "" ) then
-		markup = markup .. " collation: " .. tbl.defaultCollationName .. mkeol
+		markup = markup .. " collation: " .. tbl.defaultCollationName .. mktags["eol"]
     end
 
-	markup = markup .. mkeol
+	markup = markup .. mktags["eol"]
 	
-	markup = markup .. mktable
-    markup = markup .. mkrow ..mkheader.."*Column* "..mkheaderend..mkheader.." *Type* "..mkheaderend..mkheader.." *Null* "..mkheaderend..mkheader
-	markup = markup .. "*autoincrement* "..mkheaderend..mkheader.." *default* "..mkheaderend.. mkheader.." *Primary* "
-	markup = markup .. mkheaderend..mkheader.." *Unique* "..mkheaderend..mkheader.." *Description*"..mkheaderend..mkrowend	
+	markup = markup .. mktags["table_start"]
+    markup = markup .. mktags["row_start"] ..mktags["cell_header_start"].."*Column* "..mktags["cell_header_end"]..mktags["cell_header_start"].." *Type* "..mktags["cell_header_end"]..mktags["cell_header_start"].." *Null* "..mktags["cell_header_end"]..mktags["cell_header_start"]
+	markup = markup .. "*autoincrement* "..mktags["cell_header_end"]..mktags["cell_header_start"].." *default* "..mktags["cell_header_end"].. mktags["cell_header_start"].." *Primary* "
+	markup = markup .. mktags["cell_header_end"]..mktags["cell_header_start"].." *Unique* "..mktags["cell_header_end"]..mktags["cell_header_start"].." *Description*"..mktags["cell_header_end"]..mktags["row_end"]	
 	
     --
     -- iterate through the table columns
     for k = 1, grtV.getn(tbl.columns) do
         col = tbl.columns[k]
-		markup = buildGenericMarkupForSingleColumn(tbl, col, markup, mkrow, mkcell, mkrowend, mkcellend, mkeol)
+		markup = buildGenericMarkupForSingleColumn(tbl, col, markup, mktags)
     end
-	markup = markup .. mktableend
+	markup = markup .. mktags["table_end"]
 
 	
 	-- table index
@@ -438,7 +453,7 @@ function buildGenericMarkupForSingleTable(tbl, schema, markup, mktitle, mktitlee
     for k = 1, grtV.getn(tbl.indices) do
         index = tbl.indices[k]
         if ( index.indexType == "INDEX" ) then
-            indexes = indexes .. mkcell .. index.name .. mkcellend .. mkcell
+            indexes = indexes .. mktags["cell_data_start"] .. index.name .. mktags["cell_data_end"] .. mktags["cell_data_start"]
             for l = 1, grtV.getn(index.columns) do
                 column = index.columns[l]
                 indexes = indexes .. column.referencedColumn.name
@@ -446,27 +461,27 @@ function buildGenericMarkupForSingleTable(tbl, schema, markup, mktitle, mktitlee
                     indexes = indexes .. ", "
                 end
             end
-            indexes = mkrow..indexes .. mkcellend .. mkcell.."INDEX"..mkcellend..mkrowend
+            indexes = mktags["row_start"]..indexes .. mktags["cell_data_end"] .. mktags["cell_data_start"].."INDEX"..mktags["cell_data_end"]..mktags["row_end"]
         end
     end
     
 	if ( indexes ~= nil and indexes ~= "") then
-		markup = markup .. mksubtitle.."Indexes"..mksubtitleend
-		markup = markup .. mktable
-		markup = markup .. mkrow..mkcell.." *Name* "..mkcellend..mkcell.." *Columns* "..mkcellend..mkcell.." *Type* "..mkcellend .. mkrowend
+		markup = markup .. mktags["subtitle_start"].."Indexes"..mktags["subtitle_end"]
+		markup = markup .. mktags["table_start"]
+		markup = markup .. mktags["row_start"]..mktags["cell_data_start"].." *Name* "..mktags["cell_data_end"]..mktags["cell_data_start"].." *Columns* "..mktags["cell_data_end"]..mktags["cell_data_start"].." *Type* "..mktags["cell_data_end"] .. mktags["row_end"]
 		markup = markup .. indexes
-		markup = markup .. mktableend
+		markup = markup .. mktags["table_end"]
 	end
 
 	return markup
 end
 
 
-function buildGenericMarkupForSingleColumn(tbl, col, markup, mkrow, mkcell, mkrowend, mkcellend, mkeol)
+function buildGenericMarkupForSingleColumn(tbl, col, markup, mktags)
     local l, m, p, u, n
 
 	-- column name
-	markup = markup .. mkrow .. mkcell .. col.name .. mkcellend .. mkcell
+	markup = markup .. mktags["row_start"] .. mktags["cell_data_start"] .. col.name .. mktags["cell_data_end"] .. mktags["cell_data_start"]
 	
 	-- column type
 	if ( col.simpleType ~= nil ) then
@@ -477,27 +492,27 @@ function buildGenericMarkupForSingleColumn(tbl, col, markup, mkrow, mkcell, mkro
         markup = markup.. "(" ..col.length.. ")"
     end
 	
-	markup = markup .. mkcellend .. mkcell
+	markup = markup .. mktags["cell_data_end"] .. mktags["cell_data_start"]
 	
 	-- column not null?
 	if ( col.isNotNull == 1 ) then
-		markup = markup .. " NOT NULL " .. mkcellend .. mkcell
+		markup = markup .. " NOT NULL " .. mktags["cell_data_end"] .. mktags["cell_data_start"]
 	else
-	    markup = markup .. " NULL " .. mkcellend .. mkcell
+	    markup = markup .. " NULL " .. mktags["cell_data_end"] .. mktags["cell_data_start"]
 	end
 	
 	-- autoincrement
 	if ( col.autoIncrement == 1 ) then
-		markup = markup ..  " true " .. mkcellend .. mkcell
+		markup = markup ..  " true " .. mktags["cell_data_end"] .. mktags["cell_data_start"]
 	else 
-	   markup = markup ..  " false " .. mkcellend .. mkcell
+	   markup = markup ..  " false " .. mktags["cell_data_end"] .. mktags["cell_data_start"]
 	end
 	
 	-- default
 	if ( col.defaultValue ~= '') then
-		markup = markup .. col.defaultValue .. mkcellend .. mkcell 
+		markup = markup .. col.defaultValue .. mktags["cell_data_end"] .. mktags["cell_data_start"] 
 	else 
-		markup = markup .. mkcellend .. mkcell
+		markup = markup .. mktags["cell_data_end"] .. mktags["cell_data_start"]
 	end 
 	
 	p = " false "
@@ -530,10 +545,10 @@ function buildGenericMarkupForSingleColumn(tbl, col, markup, mkrow, mkcell, mkro
     end
 	
 	-- primary key?
-	markup = markup .. p .. mkcellend .. mkcell
+	markup = markup .. p .. mktags["cell_data_end"] .. mktags["cell_data_start"]
 	
 	-- unique key?
-	markup = markup .. u .. mkcellend .. mkcell
+	markup = markup .. u .. mktags["cell_data_end"] .. mktags["cell_data_start"]
 	
 	-- description
     if ( col.comment ~= nil and col.comment ~= '') then
@@ -548,7 +563,7 @@ function buildGenericMarkupForSingleColumn(tbl, col, markup, mkrow, mkcell, mkro
 		end 
 	end
 	
-	markup = markup .. mkcellend .. mkrowend .. mkeol
+	markup = markup .. mktags["cell_data_end"] .. mktags["row_end"] .. mktags["eol"]
 	
 	
     return markup
