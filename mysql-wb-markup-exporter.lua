@@ -72,7 +72,7 @@ function getPluginInfo()
 
     -- new plugin: export Confluence to clipboard
     plugin = createNewPlugin("wb.catalog.util.exportMarkupToClipboard" .. props.version,
-                             "Confluence Markup Exporter " .. props.version .. ": Copy to Clipboard",
+                             "Confluence Markup Exporter (" .. props.version .. "): Copy to Clipboard",
                              props.name,
                              "exportMarkupToClipboard",
                              {objectPluginInput("db.Catalog")},
@@ -83,7 +83,7 @@ function getPluginInfo()
 
     -- new plugin: export HTML to clipboard
     plugin = createNewPlugin("wb.catalog.util.exportHTMLMarkupToClipboard" .. props.version,
-                             "HTML Markup Exporter " .. props.version .. ": Copy to Clipboard",
+                             "HTML Markup Exporter (" .. props.version .. "): Copy to Clipboard",
                              props.name,
                              "exportHTMLMarkupToClipboard",
                              {objectPluginInput("db.Catalog")},
